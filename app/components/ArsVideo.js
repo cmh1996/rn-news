@@ -26,6 +26,7 @@ export default class BackToTop extends Component{
       playableDuration:0,
       playState:0,//0表示还没加载，显示一张图片；1表示开始缓冲但还没可以播放；2表示正在播放；3表示暂停；4表示播放途中正在缓冲；5表示播放完毕
     };
+    this.controlBarWidth=246;
   }
 
   componentWillMount(){
@@ -120,7 +121,10 @@ export default class BackToTop extends Component{
   }
 
   changeProgress(evt){
-    ToastAndroid.show(evt.pageX, ToastAndroid.SHORT);
+    let locationX = evt.nativeEvent.locationX;
+    let progress = (locationX/this.controlBarWidth);
+    let changedTime = this.state.wholeDuration*progress;
+    this.refs.videoPlayer.seek(changedTime);
   }
 
   render(){
@@ -155,6 +159,7 @@ export default class BackToTop extends Component{
           :
           <TouchableOpacity activeOpacity={1} onPress={this.pressVideoHandle.bind(this)}> 
             <Video 
+               ref="videoPlayer"
                source={{uri: this.props.source}}
                rate={1.0}                   // 控制暂停/播放，0 代表暂停
                volume={1.0}                 // 声音的放大倍数，0 代表没有声音，就是静音muted, 1 代表正常音量 normal，更大的数字表示放大的倍数
@@ -211,11 +216,16 @@ export default class BackToTop extends Component{
             :
             <TouchableOpacity activeOpacity={1} style={styles.controlBar} onPress={()=>{return;}}>
               <Text style={styles.controlBarText}>{formatTime(Math.floor(this.state.curTime))}</Text>
-              <View style={styles.controlBarBar}>
+              <View 
+                style={styles.controlBarBar} 
+                onStartShouldSetResponder={(evt)=>true} 
+                onMoveShouldSetResponder={(evt)=>true} 
+                onResponderGrant={this.changeProgress.bind(this)}
+              >
                 <View style={styles.wholeProgress}></View>
                 <View style={[styles.playableProgress,{width:((this.state.playableDuration/this.state.wholeDuration)*100)+'%'}]}></View>
                 <View style={[styles.playedProgress,{width:((this.state.curTime/this.state.wholeDuration)*100)+'%'}]}></View>
-                <View pointerEvents="box-only" onPress={this.changeProgress.bind(this)} style={[styles.circle,{left:((this.state.curTime/this.state.wholeDuration)*100)+'%'}]}></View>
+                <View style={[styles.circle,{left:((this.state.curTime/this.state.wholeDuration)*100)+'%'}]}></View>
               </View>
               <Text style={styles.controlBarText}>{formatTime(this.state.wholeDuration)}</Text>
             </TouchableOpacity>
